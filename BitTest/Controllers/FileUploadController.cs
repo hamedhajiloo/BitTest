@@ -47,19 +47,16 @@ namespace BitTest.Controllers
 
                 if (hasContentDispositionHeader)
                 {
-                    // Don't trust the file name sent by the client. To display the file name, HTML-encode the value.
-                    var trustedFileNameForDisplay = WebUtility.HtmlEncode(contentDisposition.FileName.Value);
-                    var trustedFileNameForFileStorage = Path.GetRandomFileName();
                     using (var targetStream = 
                         System.IO.File.Create(
                             Path.Combine(
                                 Path.Combine(
-                                    Path.Combine(env.ContentRootPath, env.WebRootPath), "Files\\"), trustedFileNameForDisplay)))
+                                    Path.Combine(env.ContentRootPath, env.WebRootPath), "Files\\"), contentDisposition.FileName.Value)))
                     {
                         await section.Body.CopyToAsync(targetStream);
                     }
 
-                    return Ok(trustedFileNameForFileStorage);
+                    return Ok();
                 }
 
                 // Drain any remaining section body that hasn't been consumed and read the headers for the next section.
