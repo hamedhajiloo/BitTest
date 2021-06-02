@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Net.Http.Headers;
@@ -12,14 +13,21 @@ namespace BitTest.Controllers
     [Route("[controller]/[action]")]
     public class FileUploadController : ControllerBase
     {
-        private const int BoundaryLengthLimit = 512 * 1024;
+        private const int BoundaryLengthLimit = int.MaxValue;
+        private readonly IWebHostEnvironment env;
 
+        public FileUploadController(IWebHostEnvironment env)
+        {
+            this.env = env;
+        }
         [HttpGet]
         public IActionResult Test()
         {
             return Ok("test");
         }
 
+        [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
+        [DisableRequestSizeLimit]
         [HttpPost]
         public async Task<IActionResult> UploadStreamedFile()
         {
@@ -42,7 +50,11 @@ namespace BitTest.Controllers
                     // Don't trust the file name sent by the client. To display the file name, HTML-encode the value.
                     var trustedFileNameForDisplay = WebUtility.HtmlEncode(contentDisposition.FileName.Value);
                     var trustedFileNameForFileStorage = Path.GetRandomFileName();
-                    using (var targetStream = System.IO.File.Create(Path.Combine(Path.GetTempPath(), trustedFileNameForDisplay /* trustedFileNameForFileStorage */)))  // TOTO JE JENOM TESTOVÁTKO, NIKDY SOUBORY POD PŮVODNÍM NÁZVEM
+                    using (var targetStream = 
+                        System.IO.File.Create(
+                            Path.Combine(
+                                Path.Combine(
+                                    Path.Combine(env.ContentRootPath, env.WebRootPath), "Files\\"), trustedFileNameForDisplay)))
                     {
                         await section.Body.CopyToAsync(targetStream);
                     }
